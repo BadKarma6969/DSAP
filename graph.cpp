@@ -6,43 +6,71 @@ struct Node {
 };
 
 class Graph {
-  int nodes;
-  int edges;
-  vector<int> adj(nodes);
-  Graph() {nodes = 0; edges = 0; vector<int> adj(0)};
+public:
+    int nodes;
+    int edges;
+    vector<vector<int>> adj;
+    vector<Node> nodeLists; // list of graph nodes
+    Graph(int n = 0, int e = 0) {
+        nodes = n;
+        edges = e;
+        adj.resize(n);
+        nodeLists.resize(n);
+        for (int i = 0; i < n; i++)
+            nodeList[i].polarity = ((double)rand() / RAND_MAX) * 2.0 - 1.0; //randomly assigning polarity to nodes
+    }
+    void addEdge(int u, int v) {
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+        edges++;
+    }
+
+    int size() const {
+        return nodes;
+    }
 };
 
-Graph G = new Graph();
+//Random Graph being generated using Erdős–Rényi random graph model
+Graph randomGraph(int n, double p){
+    Graph G(n);
+    for(int i = 0; i < n; i++){
+        for(int j = i + 1; j < n; j++){
+            if (((double)rand() / RAND_MAX) < p) // if a randomly generated no. is lesser than p, an edge is created between them
+                // p has to be set manually
+                G.addEdge(i, j);
+        }
+    }
+    return G;
+}
 
 double randPolarity() {
     return (double(rand()) / RAND_MAX) * 2.0 - 1.0;
 }
 
-void polarize(Graph &G, int steps, double influence_strength = 0.1) {
-    // int n = G.size();
-    int n = G.nodes;
+void polarize(Graph &G, int steps, double influenceStrength = 0.1) {
+    int n = G.size();
 
     for (int step = 0; step < steps; step++) {
-        vector<double> new_polarity(n);
+        vector<double> newPolarity(n);
 
         for (int i = 0; i < n; i++) {
             double sum = 0;
             int count = 0;
             for (int nb : G[i].neighbors) {
-                double sim = 1.0 - fabs(G[i].polarity - G[nb].polarity);
+                double sim = 1.0 - fabs(G[i].polarity - G[nb].polarity); // fabs is just abs for floating point nos.
                 sum += G[nb].polarity * sim;  // weighted by similarity
                 count++;
             }
             if (count > 0)
-                new_polarity[i] = (1 - influence_strength) * G[i].polarity +
-                                  influence_strength * (sum / count);
+                newPolarity[i] = (1 - influenceStrength) * G[i].polarity +
+                                  influenceStrength * (sum / count);
             else
-                new_polarity[i] = G[i].polarity;
+                newPolarity[i] = G[i].polarity;
         }
 
         // update all at once
         for (int i = 0; i < n; i++)
-            G[i].polarity = new_polarity[i];
+            G[i].polarity = newPolarity[i];
     }
 }
 
@@ -69,7 +97,7 @@ void exportGraph(const Graph &G, const string &prefix) {
 
 int main() {
     int n = 50;
-    double p = 0.1;  // edge probability
+    double p = 0.1;  // has to be set manually
     int steps = 50;
 
     Graph G = randomGraph(n, p);
