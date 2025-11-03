@@ -1,6 +1,10 @@
 #include <bits/stdc++.h>
 using namespace std;
 using AdjList = vector<unordered_map<int, double>>;
+static std::mt19937_64 rng((unsigned)chrono::high_resolution_clock::now().time_since_epoch().count());
+
+double drand() { return std::uniform_real_distribution<double>(0.0,1.0)(rng); }
+int irand(int a, int b) { return std::uniform_int_distribution<int>(a,b)(rng); }
 
 struct Person {
     int id;
@@ -52,5 +56,72 @@ public:
         adj[v].erase(u);
     }
 
-    //Todo: Add functions for graph generation, opinion updates, etc.
+    void generate_graph(int m0, int m){
+        // m0 : number of initial nodes, that will be fully connected
+        // m : number of edges to attach from a new node to existing nodes.
+        // Barabasi-Albert preferential attachment model
+        init(N);
+        if(N<=0) return;
+        m0 = max(1, min(m0, N));
+        m = max(1, min(m, m0));
+
+        // fully connect initial m0 nodes
+        for(int i=0; i<m0; i++){
+            for(int j=i+1; j<m0; j++){
+                add_edge(i, j, 0.5 + drand()*0.5);
+            }
+        }
+    
+        vector<int> degree(N, 0);
+        for(int i=0; i<m0; i++){
+            degree[i] = (int)adj[i].size();
+        }
+        int total_degree = accumulate(degree.begin(), degree.begin()+m0, 0);
+        for(int newv = m0; newv < N; newv++){
+            unordered_set<int> targets; // targets that the new node will connect to
+            while((int)targets.size() < m){
+                int pick = irand(0, max(newv-1,0));
+                int r = irand(0, total_degree + newv -1);
+                int acc = 0;
+                for(int i=0; i<newv; i++){
+                    acc += degree[i] + 1;
+                    if(r < acc){ targets.insert(i); break; }
+                }
+            }
+
+            for(int v : targets){
+                double w = 0.3 + drand()*0.7; // random weight between 0.3 and 1.0
+                add_edge(newv, v, w);
+                degree[newv]++; degree[v]++;
+                total_degree += 2;
+            }
+        }
+    }
+
+    void update_opinions(){
+        vector<double> new_op(N, 0.0);
+        for(int u=0; u<N; u++){
+            Person &p = persons[u];
+            double weighted_sum = 0.0;
+            double weight_total = 0.0;
+            for(auto &pr : adj[u]){
+                int v = pr.first;
+                double w = pr.second;
+
+                if(drand() > persons[u].exposure) continue; // sometimes the person won't get exposed to this neighbour's opinions
+
+                weighted_sum += w * persons[v].opinion * persons[v].influence;
+                weight_total += w;
+            }
+
+            double neighbor_avg = (weight_total>0.0) ? (weighted_sum / weight_total) : persons[u].opinion;
+            new_op[u] = persons[u].stubbornness * persons[u].opinion + (1.0 - persons[u].stubbornness) * neighbor_avg;
+
+            // clamp to [-1, +1]
+            if(new_op[u] > 1.0) new_op[u] = 1.0;
+            if(new_op[u] < -1.0) new_op[u] = -1.0;
+        }
+        for(int i=0;i<N;++i) persons[i].opinion = new_op[i];
+    }
+    //Todo: Add functions for weight updation, rewiring, etc.
 };
