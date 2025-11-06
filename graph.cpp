@@ -123,5 +123,49 @@ public:
         }
         for(int i=0;i<N;++i) persons[i].opinion = new_op[i];
     }
-    //Todo: Add functions for weight updation, rewiring, etc.
+
+    void modify_weights(){
+        vector<pair<int,int>> to_remove;
+        for(int u=0; u<N; u++){
+            for(auto &pr : adj[u]){
+                int v = pr.first;
+                double &w = pr.second;
+                if(u<v){
+                    double diff = fabs(persons[u].opinion - persons[v].opinion);
+                    if(diff <= tolerance){
+                        w += agreement_growth * (1.0 - diff);
+                        if(w > max_weight) w = max_weight;
+                    } else {
+                        w -= disagreement_decay * (diff - tolerance);
+                        if(w < min_weight){
+                            to_remove.push_back({u,v});
+                        }
+                        else{
+                            for(auto &pr2 : adj[v]) if(pr2.first==u) { pr2.second = w; break; }
+                        }
+                    }
+                }
+            }
+        }
+        for(auto &pr : to_remove){
+            remove_edge(pr.first, pr.second);
+        }
+    }
+
+    void rewire_edges(){
+        for(int u=0; u<N; u++){
+            if(drand() < rewiring_prob){
+                int candidate = irand(0, N-1);
+                if(candidate != u && adj[u].find(candidate) == adj[u].end()){ // ensure that it is not already connected
+                    double op_diff = fabs(persons[u].opinion - persons[candidate].opinion);
+                    if(op_diff <= tolerance){
+                        double w = 0.1 + drand()*0.9;
+                        add_edge(u, candidate, w);
+                    }
+                }
+            }
+        }
+    }
+
+    //Todo: Add metrics, simulation functions, etc.
 };
