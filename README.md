@@ -1,6 +1,6 @@
 # Graph Polarization & Community Detection Simulation
 
-## 📌 Project Overview
+##  Project Overview
 
 This project simulates **graph structures** with polarized nodes and detects communities based on node polarities. The main goal is to study how polarization evolves in networks and how communities form over time. It can later be extended to real-world datasets like social media graphs.
 
@@ -14,7 +14,7 @@ This project simulates **graph structures** with polarized nodes and detects com
 
 ---
 
-## 🛠️ Technologies Used
+##  Technologies Used
 
 - **Python**: Graph generation, simulation, visualization.
 - **NetworkX**: Graph creation and community detection.
@@ -23,7 +23,7 @@ This project simulates **graph structures** with polarized nodes and detects com
 
 ---
 
-## ⚡ Features
+##  Features
 
 ### 1. Graph Generation
 - Create random graphs with `n` nodes and probability `p` for edge creation.
