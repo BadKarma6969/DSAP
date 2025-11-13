@@ -6,29 +6,38 @@ import networkx as nx
 from scipy.spatial import ConvexHull
 import glob
 
+# ============================================
+# LOAD GRAPH AND SNAPSHOTS
+# ============================================
+
 # Load edges
 edges_df = pd.read_csv("edges.csv")
 edges = list(zip(edges_df.u, edges_df.v))
 
-# Load all node snapshots
-files = sorted(glob.glob("nodes_step_*.csv"),
-               key=lambda x: int(x.split("_")[-1].split(".")[0]))
+# Load all snapshot CSV files
+files = sorted(
+    glob.glob("nodes_step_*.csv"),
+    key=lambda x: int(x.split("_")[-1].split(".")[0])
+)
 
 snapshots = [pd.read_csv(f) for f in files]
 steps = len(snapshots)
 
-# Build base graph
+# Build static graph
 N = len(snapshots[0])
 G = nx.Graph()
 G.add_nodes_from(range(N))
 G.add_edges_from(edges)
 
-# positions constant
+# Extract fixed node positions from step 0
 pos = {}
-for i, row in snapshots[0].iterrows():
+for _, row in snapshots[0].iterrows():
     pos[row.id] = (row.x, row.y)
 
-# Animation
+# ============================================
+# ANIMATION (Opinion Dynamics)
+# ============================================
+
 fig, ax = plt.subplots(figsize=(10, 8))
 plt.axis('off')
 
@@ -38,88 +47,94 @@ def frame(t):
     ax.axis('off')
 
     snap = snapshots[t]
-
     colors = []
     sizes = []
-    for i,row in snap.iterrows():
+
+    for _, row in snap.iterrows():
         op = row.opinion
+
+        # Node color by polarity
         if op > 0.05:
-            colors.append((1,0.4,0.4))
+            colors.append((1, 0.4, 0.4))   # red
         elif op < -0.05:
-            colors.append((0.4,0.4,1))
+            colors.append((0.4, 0.4, 1))   # blue
         else:
-            colors.append((0.8,0.8,0.8))
-        sizes.append(50 + 300*abs(op))
+            colors.append((0.8, 0.8, 0.8)) # neutral gray
+
+        # Bubble size = |opinion|
+        sizes.append(50 + 300 * abs(op))
 
     nx.draw_networkx_edges(G, pos, alpha=0.1, width=0.4, ax=ax)
-    nx.draw_networkx_nodes(G, pos, node_color=colors,
-                           node_size=sizes, ax=ax)
+    nx.draw_networkx_nodes(G, pos, node_color=colors, node_size=sizes, ax=ax)
 
-anim = animation.FuncAnimation(fig, frame, frames=steps,
-                               interval=50, repeat=False)
+ani = animation.FuncAnimation(
+    fig, frame, frames=steps, interval=50, repeat=False
+)
+
 plt.show()
 
-# Ghettos - on final frame
-import matplotlib.pyplot as plt
+# ============================================
+# LOAD GHETTOS
+# ============================================
 
-snap = snapshots[-1]
+ghetto_df = pd.read_csv("ghettos.csv")   # ghetto_id, node
+final_snap = snapshots[-1]
 
-def sign_group(op):
-    if abs(op)<0.05: return 0
-    return 1 if op>0 else -1
+# Build dictionary: ghetto_id -> list of nodes
+ghettos = {}
+for _, row in ghetto_df.iterrows():
+    gid = row.ghetto_id
+    ghettos.setdefault(gid, []).append(row.node)
 
-parent = {i:i for i in range(N)}
-def find(x):
-    if parent[x]!=x:
-        parent[x]=find(parent[x])
-    return parent[x]
-def union(a,b):
-    pa,pb=find(a),find(b)
-    if pa!=pb: parent[pb]=pa
+# ============================================
+# FINAL FRAME: SPATIAL GHETTO OVERLAY
+# ============================================
 
-# merge similar neighbors
-for u,v in edges:
-    ou = snap.loc[u].opinion
-    ov = snap.loc[v].opinion
-    if sign_group(ou)==sign_group(ov) and abs(ou-ov)<0.08:
-        union(u,v)
+plt.figure(figsize=(10, 8))
+plt.title("Final Ghettos Overlay (Convex Hulls)")
 
-clusters={}
-for i in range(N):
-    r=find(i)
-    clusters.setdefault(r,[]).append(i)
+colors = []
+sizes = []
 
-ghettos = [c for c in clusters.values() if len(c)>=5]
+for _, row in final_snap.iterrows():
+    op = row.opinion
 
-plt.figure(figsize=(10,8))
-plt.title("Final Ghettos Overlay")
+    if op > 0.05:
+        colors.append((1, 0.4, 0.4))
+    elif op < -0.05:
+        colors.append((0.4, 0.4, 1))
+    else:
+        colors.append((0.8, 0.8, 0.8))
 
-colors=[]
-sizes=[]
-for i,row in snap.iterrows():
-    op=row.opinion
-    if op>0.05: colors.append((1,0.4,0.4))
-    elif op<-0.05: colors.append((0.4,0.4,1))
-    else: colors.append((0.8,0.8,0.8))
-    sizes.append(50+300*abs(op))
+    sizes.append(50 + 300*abs(op))
 
-nx.draw_networkx_edges(G,pos,alpha=0.1)
-nx.draw_networkx_nodes(G,pos,node_color=colors,node_size=sizes)
+nx.draw_networkx_edges(G, pos, alpha=0.1)
+nx.draw_networkx_nodes(G, pos, node_color=colors, node_size=sizes)
 
-# Draw hulls
-for g in ghettos:
-    pts=np.array([pos[n] for n in g])
-    if len(pts)>=3:
-        try:
-            hull=ConvexHull(pts)
-            hp=pts[hull.vertices]
-        except:
-            hp=pts
-        op = np.mean([snap.loc[n].opinion for n in g])
-        if op>0.05: blob=(1,0.3,0.3,0.25)
-        elif op<-0.05: blob=(0.3,0.3,1,0.25)
-        else: blob=(0.7,0.7,0.7,0.2)
-        plt.fill(hp[:,0],hp[:,1],color=blob)
+# Draw convex hull for each ghetto
+for gid, nodes_list in ghettos.items():
+    pts = np.array([pos[n] for n in nodes_list])
+
+    if len(pts) < 3:
+        continue
+
+    try:
+        hull = ConvexHull(pts)
+        hull_pts = pts[hull.vertices]
+    except:
+        hull_pts = pts
+
+    avg_opinion = np.mean([final_snap.loc[n].opinion for n in nodes_list])
+
+    # Color hull based on average polarity
+    if avg_opinion > 0.05:
+        blob = (1, 0.3, 0.3, 0.25)
+    elif avg_opinion < -0.05:
+        blob = (0.3, 0.3, 1, 0.25)
+    else:
+        blob = (0.7, 0.7, 0.7, 0.25)
+
+    plt.fill(hull_pts[:, 0], hull_pts[:, 1], color=blob)
 
 plt.axis('off')
 plt.show()
