@@ -1,20 +1,18 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-static mt19937_64 rng(chrono::steady_clock::now().time_since_epoch().count());
+// chrono::steady_clock::now().time_since_epoch().count() for dynamic seed
+
+static mt19937_64 rng(6942069);
 double drand() { return uniform_real_distribution<double>(0.0,1.0)(rng); }
 
 struct Node {
     double x, y;
-    double opinion;
-    double stubbornness;
-    double influence;
-    double exposure;
+    double opinion; //[-1, 1]
+    double stubbornness; //How much a node is willing to listen to some other node. [0, 1]
+    double influence; //How strongly a node can influence others. [0, 1]
 };
 
-// ===========================================
-// =========== KD-TREE IMPLEMENTATION ========
-// ===========================================
 struct KDNode {
     int idx;
     double x, y;
@@ -94,9 +92,6 @@ public:
     }
 };
 
-// ===========================================
-// ============ DSU (Union–Find) =============
-// ===========================================
 struct DSU {
     vector<int> parent, sz;
     
@@ -141,17 +136,16 @@ int main() {
     vector<Node> nodes(N);
     vector<vector<int>> adj(N);
     
-    // ===== 1. Create node positions =====
+    //Create node positions (x,y) and attributes
     for(int i=0;i<N;i++){
         nodes[i].x = drand();
         nodes[i].y = drand();
         nodes[i].opinion = drand()*0.2 - 0.1;
         nodes[i].stubbornness = 0.4 + drand()*0.4;
         nodes[i].influence = 0.5 + drand()*0.5;
-        nodes[i].exposure = 0.7 + drand()*0.3;
     }
     
-    // ===== 2. Spatial BA Graph using KD-Tree =====
+    //Graph generation using Barbarasi Albert Model, using Kd-Tree to optimize spatial preference
     for(int i=1;i<N;i++){
         KDTree kdtree;
         kdtree.build(nodes, i);
@@ -187,7 +181,7 @@ int main() {
         }
     }
     
-    // ===== 3. Influencers =====
+    //Select initial N opionionated nodes
     vector<int> idx(N);
     iota(idx.begin(), idx.end(), 0);
     shuffle(idx.begin(), idx.end(), rng);
@@ -201,17 +195,17 @@ int main() {
     }
     
     for(int v : pos_inf)
-        nodes[v].opinion = nodes[v].stubbornness = nodes[v].influence = nodes[v].exposure = 1;
+        nodes[v].opinion = nodes[v].stubbornness = nodes[v].influence = 1;
     for(int v : neg_inf){
         nodes[v].opinion = -1;
-        nodes[v].stubbornness = nodes[v].influence = nodes[v].exposure = 1;
+        nodes[v].stubbornness = nodes[v].influence = 1;
     }
     for(int v : neut_inf){
         nodes[v].opinion = 0;
-        nodes[v].stubbornness = nodes[v].influence = nodes[v].exposure = 1;
+        nodes[v].stubbornness = nodes[v].influence = 1;
     }
     
-    // ===== 4. Write edges.csv =====
+    //Export to csv
     {
         ofstream e("edges.csv");
         e << "u,v\n";
@@ -221,14 +215,14 @@ int main() {
         }
     }
     
-    // ===== 5. Run Opinion Dynamics (Optimized) =====
+    //Simulation of opinion spread
     vector<double> new_op(N);
     vector<bool> converged(N, false);
     
     for(int step=0; step<=steps; step++){
         string fname = "nodes_step_" + to_string(step) + ".csv";
         ofstream f(fname);
-        f << "id,x,y,opinion,stubbornness,influence,exposure\n";
+        f << "id,x,y,opinion,stubbornness,influence\n";
         
         // Buffered output
         string buffer;
@@ -238,14 +232,12 @@ int main() {
             buffer += to_string(i) + "," + to_string(nodes[i].x) + "," + 
                       to_string(nodes[i].y) + "," + to_string(nodes[i].opinion) + "," + 
                       to_string(nodes[i].stubbornness) + "," + 
-                      to_string(nodes[i].influence) + "," + 
-                      to_string(nodes[i].exposure) + "\n";
+                      to_string(nodes[i].influence) + "\n";
         }
         f << buffer;
         
         if(step == steps) break;
-        
-        // Opinion update with early exit
+
         #pragma omp parallel for
         for(int u=0; u<N; u++){
             Node &p = nodes[u];
@@ -256,7 +248,6 @@ int main() {
             
             double ws = 0, wt = 0;
             for(int v : adj[u]){
-                if(drand() > p.exposure) continue;
                 Node &q = nodes[v];
                 ws += q.opinion * q.influence;
                 wt += q.influence;
@@ -271,7 +262,7 @@ int main() {
             
             new_op[u] = max(-1.0, min(1.0, new_op[u]));
             
-            // Check convergence
+            //Check convergence
             if(fabs(new_op[u] - p.opinion) < 1e-6)
                 converged[u] = true;
         }
@@ -283,7 +274,7 @@ int main() {
         }
     }
     
-    // ===== 6. GHETTO DETECTION (Optimized) =====
+    //Assigning ghettos using Union-Find
     auto sign_group = [&](double op){
         if(fabs(op) < 0.05) return 0;
         return (op > 0) ? 1 : -1;
@@ -310,7 +301,7 @@ int main() {
         }
     }
     
-    // Build clusters
+    //Build clusters
     unordered_map<int, vector<int>> clusters;
     for(int i=0;i<N;i++){
         clusters[dsu.find(i)].push_back(i);
@@ -327,7 +318,7 @@ int main() {
         gid++;
     }
     
-    cout << "Ghetto detection complete. Output -> ghettos.csv\n";
+    cout << "Graph generation and simulation complete. Run visualise.py to visualise the graph.";
     
     return 0;
 }
