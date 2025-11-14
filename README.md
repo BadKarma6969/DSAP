@@ -2,37 +2,57 @@
 
 ##  Project Overview
 
-This project simulates **graph structures** with some idealogically polarized nodes and detects communities based on node polarities. The main goal is to study how polarization evolves in networks and how communities form over time. Graph based approaches for modeling idealogical belifs in communities is an incresingly used tool in political and behavioural sciences (Socigrams).
+This project simulates a graph with some idealogically polarized nodes and detects communities based on node polarities. The main goal is to study how polarization evolves in networks and how communities of similar opinons form over time. Graph based approaches for modeling idealogical beliefs in communities is an incresingly used tool in political and behavioural sciences (Sociograms).
+
 **Key features:**
 
-- Generate random graphs with configurable size and connectivity.
-- Assign polarities to nodes in the range `[-1, 1]`.
-- Simulate idealogical spread using graph structure and node polarities.
-- Detects communities of similar ideaologies 
-- Visualize communities and node polarization.
+- Generates random graphs.
+- Assigns polarities to nodes in the range `[-1, 1]`.
+- Simulate idealogical spread using graph structure and neighbouring node polarities.
+- Detects communities of similar opinions(ideaology) using union find 
+- Visualize communities(idealogical ghettos) and node polarization.
 
 ---
 
 ##  Technologies Used
+-  **C++**: Graph creation, simulation and community detection.
+-  **Python:** NetworkX, MatPlotLib (for graph visualisation)
 
--  **Python: NetworkX MatPlotLib**: Only for graph visualisation
--  **C++**: Graph creation and community detection.
 
 ---
 
 ##  Features
 
 ### 1. Graph Generation
-- Create random graphs with `n` nodes and probability `p` for edge creation.
-- Configurable graph density and node attributes.
+
+- Builds a random graph using the **spatial Barabási–Albert Model**.
+- A **KD-Tree** enables fast spatial neighbor searches.
+
 
 ### 2. Node Polarization
-- Assign random polarities in the range `[-1, 1]`.
-- Track evolution of node opinions if diffusion is applied later.
+
+- Each node is assigned:
+  - **Opinion** - numerical representation of a node's opinion
+  - **Stubbornness** — resistance to influence  
+  - **Influence** — strength of persuasion
+
+- Opinion updates use:
+  - **Weighted average of one's own and neighbouring opinions**
+  - **Bounded-confidence filtering** (ignoring highly dissimilar neighbors)
+  - **Increasing Stubbornness**, gradually hardening beliefs
+
+
 
 ### 3. Community Detection
-- Detect communities using Union Find
+
+- Uses **Disjoint Set Union (Union–Find)** to detect polarized spatial clusters (ghettos).
+- Communities form when nodes meet all criteria:
+  - **Spatial proximity**
+  - **Ideological similarity**
+
+- DSU aggregates these into distinct ideological communities.
 
 ### 4. Visualization
-- Plot graphs with nodes colored by polarity or community.
+- Plot graphs with nodes colored by opinion 
+- Plot overlay of community in the graph
 - Easily compare polarization vs. community structure.
