@@ -49,7 +49,7 @@ This project simulates a graph with some idealogically polarized nodes and detec
 
 ### 3. Community Detection
 
-- Uses **Disjoint Set Union (Union–Find)** to detect polarized spatial clusters (ghettos).
+- Uses **Disjoint Set Union (Union–Find)** to detect polarized spatial communities (ghettos).
 - Communities form when nodes meet all criteria:
   - **Spatial proximity**
   - **Ideological similarity**
