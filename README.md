@@ -4,6 +4,10 @@
 
 This project simulates a graph with some idealogically polarized nodes and detects communities based on node polarities. The main goal is to study how polarization evolves in networks and how communities of similar opinons form over time. Graph based approaches for modeling idealogical beliefs in communities is an incresingly used tool in political and behavioural sciences (Sociograms).
 
+
+![humara graph](https://github.com/anjaneya-damle/anjaneya-damle.github.io/blob/main/ezgif-8bd1a83a157b8a09.gif)
+
+
 **Key features:**
 
 - Generates random graphs.
@@ -57,4 +61,4 @@ This project simulates a graph with some idealogically polarized nodes and detec
 - Plot overlay of community in the graph
 - Easily compare polarization vs. community structure.
 
-![humara graph](https://github.com/anjaneya-damle/anjaneya-damle.github.io/blob/main/ezgif-8bd1a83a157b8a09.gif)
+
