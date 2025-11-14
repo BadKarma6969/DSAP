@@ -1,25 +1,22 @@
-# Graph Polarization & Community Detection Simulation
+# Modeling the spread of  ideology in a population
 
 ##  Project Overview
 
-This project simulates **graph structures** with polarized nodes and detects communities based on node polarities. The main goal is to study how polarization evolves in networks and how communities form over time. It can later be extended to real-world datasets like social media graphs.
-
+This project simulates **graph structures** with some idealogically polarized nodes and detects communities based on node polarities. The main goal is to study how polarization evolves in networks and how communities form over time. Graph based approaches for modeling idealogical belifs in communities is an incresingly used tool in political and behavioural sciences (Socigrams).
 **Key features:**
 
 - Generate random graphs with configurable size and connectivity.
 - Assign polarities to nodes in the range `[-1, 1]`.
-- Simulate community formation using graph structure and node polarities.
+- Simulate idealogical spread using graph structure and node polarities.
+- Detects communities of similar ideaologies 
 - Visualize communities and node polarization.
-- Future extensions: diffusion models, real-world graph integration.
 
 ---
 
 ##  Technologies Used
 
-- **Python**: Graph generation, simulation, visualization.
-- **NetworkX**: Graph creation and community detection.
-- **Matplotlib / Seaborn**: Visualization of nodes and communities.
-- **Optional**: C++ modules for performance-critical simulations.
+-  **Python: NetworkX MatPlotLib**: Only for graph visualisation
+-  **C++**: Graph creation and community detection.
 
 ---
 
@@ -34,8 +31,7 @@ This project simulates **graph structures** with polarized nodes and detects com
 - Track evolution of node opinions if diffusion is applied later.
 
 ### 3. Community Detection
-- Detect communities using modularity-based methods.
-- Color-code nodes by community for visualization.
+- Detect communities using Union Find
 
 ### 4. Visualization
 - Plot graphs with nodes colored by polarity or community.
