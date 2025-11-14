@@ -56,3 +56,5 @@ This project simulates a graph with some idealogically polarized nodes and detec
 - Plot graphs with nodes colored by opinion 
 - Plot overlay of community in the graph
 - Easily compare polarization vs. community structure.
+
+![humara graph](https://github.com/anjaneya-damle/anjaneya-damle.github.io/blob/main/ezgif-8bd1a83a157b8a09.gif)
